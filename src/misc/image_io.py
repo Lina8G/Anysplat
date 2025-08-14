@@ -206,6 +206,166 @@ def save_interpolated_video(
     # Save depth video
     save_video(depth_colored, os.path.join(save_path, f"depth.mp4"))
     # Save video
+    os.makedirs(save_path, exist_ok=True)
     save_video(video, os.path.join(save_path, f"rgb.mp4"))
+    # import torchvision.utils as vutils
+    # for i, frame in enumerate(video):
+    #     vutils.save_image(frame, os.path.join(save_path, f"rgb_{i:03d}.png"))
+
 
     return os.path.join(save_path, f"rgb.mp4"), os.path.join(save_path, f"depth.mp4")
+
+def save_interpolated_images(
+    pred_extrinsics, pred_intrinsics, b, h, w, gaussians, save_path, decoder_func, t=10
+):
+    # Interpolate between neighboring frames
+    # t: Number of extra views to interpolate between each pair
+    interpolated_extrinsics = []
+    interpolated_intrinsics = []
+
+    # For each pair of neighboring frame
+    for i in range(pred_extrinsics.shape[1] - 1):
+        # Add the current frame
+        interpolated_extrinsics.append(pred_extrinsics[:, i : i + 1])
+        interpolated_intrinsics.append(pred_intrinsics[:, i : i + 1])
+
+        # Interpolate between current and next frame
+        for j in range(1, t + 1):
+            alpha = j / (t + 1)
+
+            # Interpolate extrinsics
+            start_extrinsic = pred_extrinsics[:, i]
+            end_extrinsic = pred_extrinsics[:, i + 1]
+
+            # Separate rotation and translation
+            start_rot = start_extrinsic[:, :3, :3]
+            end_rot = end_extrinsic[:, :3, :3]
+            start_trans = start_extrinsic[:, :3, 3]
+            end_trans = end_extrinsic[:, :3, 3]
+
+            # Interpolate translation (linear)
+            interp_trans = (1 - alpha) * start_trans + alpha * end_trans
+
+            # Interpolate rotation (spherical)
+            start_rot_flat = start_rot.reshape(b, 9)
+            end_rot_flat = end_rot.reshape(b, 9)
+            interp_rot_flat = (1 - alpha) * start_rot_flat + alpha * end_rot_flat
+            interp_rot = interp_rot_flat.reshape(b, 3, 3)
+
+            # Normalize rotation matrix to ensure it's orthogonal
+            u, _, v = torch.svd(interp_rot)
+            interp_rot = torch.bmm(u, v.transpose(1, 2))
+
+            # Combine interpolated rotation and translation
+            interp_extrinsic = (
+                torch.eye(4, device=pred_extrinsics.device).unsqueeze(0).repeat(b, 1, 1)
+            )
+            interp_extrinsic[:, :3, :3] = interp_rot
+            interp_extrinsic[:, :3, 3] = interp_trans
+
+            # Interpolate intrinsics (linear)
+            start_intrinsic = pred_intrinsics[:, i]
+            end_intrinsic = pred_intrinsics[:, i + 1]
+            interp_intrinsic = (1 - alpha) * start_intrinsic + alpha * end_intrinsic
+
+            # Add interpolated frame
+            interpolated_extrinsics.append(interp_extrinsic.unsqueeze(1))
+            interpolated_intrinsics.append(interp_intrinsic.unsqueeze(1))
+
+    # Concatenate all frames
+    pred_all_extrinsic = torch.cat(interpolated_extrinsics, dim=1)
+    pred_all_intrinsic = torch.cat(interpolated_intrinsics, dim=1)
+
+    # Add the last frame
+    interpolated_extrinsics.append(pred_all_extrinsic[:, -1:])
+    interpolated_intrinsics.append(pred_all_intrinsic[:, -1:])
+
+    # Update K to reflect the new number of frames
+    num_frames = pred_all_extrinsic.shape[1]
+
+    # Render interpolated views
+    interpolated_output = decoder_func.forward(
+        gaussians,
+        pred_all_extrinsic,
+        pred_all_intrinsic.float(),
+        torch.ones(1, num_frames, device=pred_all_extrinsic.device) * 0.1,
+        torch.ones(1, num_frames, device=pred_all_extrinsic.device) * 100,
+        (h, w),
+    )
+
+    # Convert to video format
+    video = interpolated_output.color[0].clip(min=0, max=1)
+    depth = interpolated_output.depth[0]
+    
+    # Normalize depth for visualization
+    # to avoid `quantile() input tensor is too large`
+    num_views = pred_extrinsics.shape[1] 
+    depth_norm = (depth - depth[::num_views].quantile(0.01)) / (
+        depth[::num_views].quantile(0.99) - depth[::num_views].quantile(0.01)
+    )
+    depth_norm = plt.cm.turbo(depth_norm.cpu().numpy())
+    depth_colored = (
+        torch.from_numpy(depth_norm[..., :3]).permute(0, 3, 1, 2).to(depth.device)
+    )
+    depth_colored = depth_colored.clip(min=0, max=1)
+
+    os.makedirs(save_path, exist_ok=True)
+    import torchvision.utils as vutils
+    for i, frame in enumerate(video):
+        vutils.save_image(frame, os.path.join(save_path, f"rgb_{i:03d}.png"))
+
+
+    return os.path.join(save_path, f"rgb.mp4"), os.path.join(save_path, f"depth.mp4")
+
+import os
+import numpy as np
+import torch
+import torchvision.utils as vutils
+def rescale(camtoworlds, scale):
+    camtoworlds = camtoworlds.clone()
+    camtoworlds[:, :3, 3] *= scale
+    return camtoworlds
+def random_rescale(c2w, min_scale, max_scale):
+    scale = np.random.uniform(min_scale, max_scale)
+    c2w_new = rescale(c2w[None, ...], scale)[0]
+    return c2w_new, scale
+
+def save_rescaled_views_as_images(
+    pred_extrinsics, pred_intrinsics, h, w,
+    gaussians, save_path, decoder_func,
+    min_scale=0.8, max_scale=1.2
+):
+    os.makedirs(save_path, exist_ok=True)
+
+    b = pred_extrinsics.shape[0]  # batch size (usually 1)
+    num_frames = pred_extrinsics.shape[1]
+
+    for i in range(num_frames):
+        orig_pose = pred_extrinsics[:, i]
+        intrinsics = pred_intrinsics[:, i]
+
+        # Apply random rescaling
+        rescaled_pose, scale = random_rescale(orig_pose, min_scale, max_scale)
+
+        # Prepare batched inputs
+        rescaled_pose = rescaled_pose.unsqueeze(1)  # (B, 1, 4, 4)
+        intrinsics = intrinsics.unsqueeze(1)        # (B, 1, 3, 3)
+
+        # Render the view
+        output = decoder_func.forward(
+            gaussians,
+            rescaled_pose,
+            intrinsics.float(),
+            torch.ones(1, 1, device=gaussians.means.device) * 0.1,
+            torch.ones(1, 1, device=gaussians.means.device) * 100,
+            (h, w),
+        )
+
+        rgb = output.color[0][0].clip(0, 1)  # shape (3, H, W)
+
+        # Save image
+        out_path = os.path.join(save_path, f"rescaled_{i:03d}_s{scale:.2f}.png")
+        vutils.save_image(rgb, out_path)
+
+        print(f"[✓] Saved {out_path}")
+
