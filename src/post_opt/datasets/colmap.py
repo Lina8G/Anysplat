@@ -12,11 +12,9 @@ from tqdm import tqdm
 from typing_extensions import assert_never
 
 import sys
-sys.path.append("/cpfs01/user/jianglihan/projects/gsplat/examples/datasets")
-sys.path.append("/cpfs01/user/jianglihan/projects/gsplat/examples")
-sys.path.append("/cpfs01/user/jianglihan/projects/gsplat")
+sys.path.append('/shared/xinyu_gu_car3d/AnySplat/src/post_opt')
 
-from normalize import (
+from .normalize import (
     align_principal_axes,
     similarity_from_cameras,
     transform_cameras,

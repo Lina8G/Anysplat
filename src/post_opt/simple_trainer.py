@@ -15,7 +15,7 @@ import torch
 import torch.nn.functional as F
 import tqdm
 import tyro
-import viser
+# import viser
 import yaml
 import torchvision
 import sys
@@ -240,7 +240,7 @@ class Config:
     steps_scaler: float = 1.0
 
     # Number of training steps
-    max_steps: int = 3_000
+    max_steps: int = 10_000
     # Steps to evaluate the model
     eval_steps: List[int] = field(default_factory=lambda: [1, 1_000, 3_000, 7_000, 10_000])
     # Steps to save the model
