@@ -271,14 +271,14 @@ def save_interpolated_images(
             # Add interpolated frame
             interpolated_extrinsics.append(interp_extrinsic.unsqueeze(1))
             interpolated_intrinsics.append(interp_intrinsic.unsqueeze(1))
+    
+    # Add the last frame
+    interpolated_extrinsics.append(pred_extrinsics[:, -1:])
+    interpolated_intrinsics.append(pred_intrinsics[:, -1:])
 
     # Concatenate all frames
     pred_all_extrinsic = torch.cat(interpolated_extrinsics, dim=1)
     pred_all_intrinsic = torch.cat(interpolated_intrinsics, dim=1)
-
-    # Add the last frame
-    interpolated_extrinsics.append(pred_all_extrinsic[:, -1:])
-    interpolated_intrinsics.append(pred_all_intrinsic[:, -1:])
 
     # Update K to reflect the new number of frames
     num_frames = pred_all_extrinsic.shape[1]
@@ -313,7 +313,6 @@ def save_interpolated_images(
     import torchvision.utils as vutils
     for i, frame in enumerate(video):
         vutils.save_image(frame, os.path.join(save_path, f"rgb_{i:03d}.jpg"))
-
 
     return os.path.join(save_path, f"rgb.mp4"), os.path.join(save_path, f"depth.mp4")
 
