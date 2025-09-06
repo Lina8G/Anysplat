@@ -1,3 +1,59 @@
+# AnySplat Modifications by Xinyu Gu
+
+This repository is a modified version of [AnySplat](https://github.com/InternRobotics/AnySplat).
+
+The modifications were made as part of the project **"Vehicle Novel View Synthesis for Bias Mitigation in Damage Detection Systems"**.
+
+### Major Modifications
+
+- Implemented a greedy nearest-neighbour reordering of input poses to minimise large camera jumps and improve rendering stability.
+- Updated the image-saving logic in `src/misc/image_io.py` to export rendered novel views as images.
+
+---
+
+## Environment Requirements
+
+- OS: Ubuntu 20.04  
+- GPU: NVIDIA A10G  
+- CUDA: 12.0  
+- VRAM: 23 GB
+
+---
+
+## Environment Setup
+
+```bash
+git clone https://github.com/OpenRobotLab/AnySplat.git
+cd AnySplat
+
+# Create and activate a new conda environment
+conda create -y -n anysplat python=3.10
+conda activate anysplat
+
+# Install CUDA and PyTorch
+conda install cuda -c nvidia/label/cuda-12.1.0
+pip install torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu121
+
+# Install remaining dependencies
+pip install -r requirements.txt
+```
+
+---
+
+## Run Inference
+```
+python inference_updated.py
+```
+
+---
+
+## Run Evaluation
+```
+python evaluation.py
+```
+
+See below for original documentation.
+
 # AnySplat: Feed-forward 3D Gaussian Splatting from Unconstrained Views
 
 [![Project Website](https://img.shields.io/badge/AnySplat-Website-4CAF50?logo=googlechrome&logoColor=white)](https://city-super.github.io/anysplat/)

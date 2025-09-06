@@ -208,9 +208,6 @@ def save_interpolated_video(
     # Save video
     os.makedirs(save_path, exist_ok=True)
     save_video(video, os.path.join(save_path, f"rgb.mp4"))
-    # import torchvision.utils as vutils
-    # for i, frame in enumerate(video):
-    #     vutils.save_image(frame, os.path.join(save_path, f"rgb_{i:03d}.png"))
 
 
     return os.path.join(save_path, f"rgb.mp4"), os.path.join(save_path, f"depth.mp4")
