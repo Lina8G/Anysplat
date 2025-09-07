@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
-from src.misc.image_io import save_interpolated_video, save_rescaled_views_as_images, save_interpolated_images
+from src.misc.image_io import save_interpolated_video, save_interpolated_images
 from src.model.ply_export import export_ply
 from src.model.model.anysplat import AnySplat
 from src.utils.image import process_image
@@ -33,16 +33,10 @@ def main():
     # --- Pose sequencing (greedy nearest neighbor) ---
     # Only use the translation part for sequencing
     positions = pred_all_extrinsic[0, :, :3, 3].cpu().numpy()  # (K, 3)
-
     K = positions.shape[0]
     visited = np.zeros(K, dtype=bool)
-    RANDOM_START = False  # Set to True to randomize the starting view
-    start_idx = 0
-    if RANDOM_START:
-        import random
-        start_idx = random.randint(0, K-1)
-    order = [start_idx]
-    visited[start_idx] = True
+    order = [0]
+    visited[0] = True
     for _ in range(1, K):
         last = order[-1]
         dists = np.linalg.norm(positions - positions[last], axis=1)
@@ -57,9 +51,9 @@ def main():
     pred_all_intrinsic = pred_all_intrinsic[:, order]
 
     # Save the rendering results as videos
-    save_interpolated_video(pred_all_extrinsic, pred_all_intrinsic, b, h, w, gaussians, image_folder+'/og_pose', model.decoder)
+    save_interpolated_video(pred_all_extrinsic, pred_all_intrinsic, b, h, w, gaussians, image_folder+'/result_video', model.decoder)
     # Save the interpolated images (5 interpolated views between each pair of input views)
-    save_interpolated_images(pred_all_extrinsic, pred_all_intrinsic, b, h, w, gaussians, image_folder+'/og_pose', model.decoder, t=5)
+    save_interpolated_images(pred_all_extrinsic, pred_all_intrinsic, b, h, w, gaussians, image_folder+'/result_images', model.decoder, t=5)
 
 if __name__ == "__main__":
     main()

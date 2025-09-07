@@ -363,5 +363,5 @@ def save_rescaled_views_as_images(
         out_path = os.path.join(save_path, f"rescaled_{i:03d}_s{scale:.2f}.png")
         vutils.save_image(rgb, out_path)
 
-        print(f"[✓] Saved {out_path}")
+        print(f"Saved {out_path}")
 

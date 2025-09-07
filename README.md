@@ -40,17 +40,39 @@ pip install -r requirements.txt
 
 ---
 
-## Run Inference
-```
+## Running the Model
+
+To replicate the results from the 4-frame AnySplat model in the report, follow these steps:
+
+### Run Inference
+
+Execute the following to run inference on `AnySplat/examples/4_frames`:
+
+```bash
 python inference_updated.py
 ```
 
+This will:
+
+* Save the rendered videos in `AnySplat/examples/4_frames/result_video` as:
+
+  * `rgb.mp4` (rendered RGB views)
+  * `depth.mp4` (depth views)
+* Save interpolated images (5 novel views between each input view) in `AnySplat/examples/4_frames/result_images`.
+
 ---
 
-## Run Evaluation
+### Run Evaluation
+
+To evaluate the model’s performance:
+
+```bash
+python evaluation.py --data_dir ./examples/4_frames
 ```
-python evaluation.py
-```
+
+This will compute and print the evaluation metrics: **PSNR**, **SSIM**, and **LPIPS**.
+
+---
 
 See below for original documentation.
 
