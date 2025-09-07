@@ -23,7 +23,7 @@ The modifications were made as part of the project **"Vehicle Novel View Synthes
 ## Environment Setup
 
 ```bash
-git clone https://github.com/OpenRobotLab/AnySplat.git
+git clone https://github.com/Lina8G/Anysplat
 cd AnySplat
 
 # Create and activate a new conda environment
