@@ -51,7 +51,7 @@ def main():
     pred_all_intrinsic = pred_all_intrinsic[:, order]
 
     # Save the rendering results as videos
-    save_interpolated_video(pred_all_extrinsic, pred_all_intrinsic, b, h, w, gaussians, image_folder+'/result_video', model.decoder)
+    save_interpolated_video(pred_all_extrinsic, pred_all_intrinsic, b, h, w, gaussians, image_folder+'/result_videos', model.decoder)
     # Save the interpolated images (5 interpolated views between each pair of input views)
     save_interpolated_images(pred_all_extrinsic, pred_all_intrinsic, b, h, w, gaussians, image_folder+'/result_images', model.decoder, t=5)
 
