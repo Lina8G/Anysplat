@@ -19,7 +19,7 @@ def main():
         param.requires_grad = False
 
     # Load Images
-    image_folder = f"/shared/xinyu_gu_car3d/AnySplat/examples/4_frames"
+    image_folder = f"/examples/4_frames"
 
     images = sorted([os.path.join(image_folder, f) for f in os.listdir(image_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
     images = [process_image(img_path) for img_path in images]

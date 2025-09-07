@@ -24,7 +24,7 @@ The modifications were made as part of the project **"Vehicle Novel View Synthes
 
 ```bash
 git clone https://github.com/Lina8G/Anysplat
-cd AnySplat
+cd Anysplat
 
 # Create and activate a new conda environment
 conda create -y -n anysplat python=3.10
