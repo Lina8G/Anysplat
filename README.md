@@ -1,4 +1,4 @@
-# AnySplat Modifications by Xinyu Gu
+# AnySplat Modifications by MMSK7
 
 This repository is a modified version of [AnySplat](https://github.com/InternRobotics/AnySplat).
 
